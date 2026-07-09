@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 // Array of routes to statically pre-render for search engine crawlers (SEO)
@@ -23,18 +23,102 @@ async function prerender() {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    // Customize Title and Meta descriptions dynamically per route during build
     let html = template;
-    const jsonLd = {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": `BinaryWebEngine - ${route === '/' ? 'Home' : route.slice(1).toUpperCase()}`,
-      "description": "All-in-one Linux security operations monitoring dashboard.",
-      "url": `https://binarywebengine.web.app${route}`
-    };
 
+    // Define route-specific SEO Meta parameters
+    let title = "BinaryWebEngine | Enterprise Linux Security Monitoring Platform";
+    let description = "BinaryWebEngine is an all-in-one enterprise security monitoring platform for Linux. WAF, HIDS, NIDS, ML anomaly detection, kill chain, and threat intelligence in a single engine.";
+    let jsonLd = {};
+
+    if (route === '/') {
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "BinaryWebEngine",
+        "operatingSystem": "Linux",
+        "applicationCategory": "SecurityApplication",
+        "description": "All-in-one Enterprise Linux Security Monitoring Platform with WAF, HIDS, NIDS, and ML anomaly detection.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "BinaryShielders",
+          "url": "https://binarywebengine.equisaas-bd.com"
+        }
+      };
+    } else if (route === '/docs') {
+      title = "Documentation | BinaryWebEngine";
+      description = "Complete setup, configuration, and developer guides for WAF, HIDS, and ML anomaly detection on Linux systems.";
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "BinaryWebEngine Documentation",
+        "description": "Complete setup and configuration guides for WAF, HIDS, and ML anomaly detection on Linux systems.",
+        "mainEntityOfPage": "https://binarywebengine.equisaas-bd.com/docs",
+        "author": {
+          "@type": "Organization",
+          "name": "BinaryShielders"
+        }
+      };
+    } else if (route === '/faq') {
+      title = "FAQ | BinaryWebEngine";
+      description = "Frequently asked questions about BinaryWebEngine features, WAF rules, and system deployments.";
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is BinaryWebEngine?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BinaryWebEngine is an all-in-one enterprise security monitoring platform for Linux servers, combining WAF, HIDS, NIDS, and ML anomaly detection in a single engine."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I deploy BinaryWebEngine?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can deploy the Edge API to Cloudflare Workers using Wrangler, and the static frontend command center to Firebase Hosting."
+            }
+          }
+        ]
+      };
+    } else if (route === '/about') {
+      title = "About Us | BinaryWebEngine";
+      description = "Meet Team EquiSaaS BD, the engineering task force behind BinaryWebEngine, specialized in security operations, UI/UX, and cloud architecture.";
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "name": "About Team EquiSaaS BD",
+        "description": "Meet the engineering task force behind BinaryWebEngine, specialized in security operations, UI/UX, and cloud architecture."
+      };
+    } else if (route === '/contact') {
+      title = "Contact | BinaryWebEngine";
+      description = "Get in touch with our live security analysts and support engineers at BinaryShielders.";
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Contact BinaryShielders Support",
+        "description": "Get in touch with our live security analysts and support engineers."
+      };
+    }
+
+    // Replace fallback default tags in template with optimized values
+    html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+    html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${description}" />`);
+    
+    // Inject Canonical URL
+    const canonicalTag = `<link rel="canonical" href="https://binarywebengine.equisaas-bd.com${route}" />`;
+    
+    // Inject Structured Data (JSON-LD)
     const structuredDataScript = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
-    html = html.replace('</head>', `${structuredDataScript}\n</head>`);
+    
+    html = html.replace('</head>', `${canonicalTag}\n${structuredDataScript}\n</head>`);
 
     fs.writeFileSync(filepath, html, 'utf8');
     console.log(`[SEO Prerender] Generated static build for route: ${route} -> ${filename}`);
